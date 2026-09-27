@@ -1,100 +1,121 @@
 # Pomodoro
 
-A keyboard-first terminal Pomodoro timer built with Bun and OpenTUI.
+[![Release](https://img.shields.io/github/v/release/m0hdrar/pomodoro_tui)](https://github.com/m0hdrar/pomodoro_tui/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Platform](https://img.shields.io/badge/platform-macOS-lightgrey)
 
-## Install
+A keyboard-first Pomodoro timer for your terminal, built with [Bun](https://bun.sh) and [OpenTUI](https://github.com/sst/opentui).
+
+## Features
+
+- **Focus timer:** focus sessions, short breaks and long breaks, controlled from the keyboard
+- **Tasks:** attach each focus session to the task you are working on
+- **Stats:** today's completed sessions and your session history
+- **Notifications:** desktop alerts when an interval ends, if your terminal supports them
+- **Local storage:** no account and no cloud; your data stays on your machine
+
+## Installation
+
+Install with [Homebrew](https://brew.sh):
 
 ```sh
 brew install m0hdrar/tap/pomodoro
+```
+
+Then run:
+
+```sh
 pomodoro
 ```
 
-macOS only (Apple Silicon and Intel).
+Supports macOS on Apple Silicon and Intel.
 
-## Build from source
+## Usage
 
-### Requirements
-
-- Bun 1.3 or newer
-- Zig when building OpenTUI's native components from source
-
-### Run
-
-```sh
-bun install
-bun run start
-```
-
-For watch mode during development:
-
-```sh
-bun run dev
-```
-
-## Controls
-
-### Home
+### Timer
 
 | Key | Action |
 | --- | --- |
-| `Space` | Start, pause, or resume the current interval |
-| `N` | Skip the current interval |
-| `R` | Reset the current interval to its full duration, ready to start |
+| `Space` | Start, pause or resume |
+| `N` | Skip to the next interval |
+| `R` | Reset the current interval |
 | `T` | Open tasks |
-| `S` | Open today's stats and session history |
+| `S` | Open stats |
 | `,` | Open settings |
-| `Q` or `Ctrl+C` | Save and quit |
+| `Q` / `Ctrl+C` | Save and quit |
 
 ### Tasks
 
 | Key | Action |
 | --- | --- |
-| `↑` / `↓` | Browse open tasks |
+| `↑` / `↓` | Move through tasks |
 | `A` | Add a task |
 | `Enter` | Select the highlighted task |
 | `C` | Complete the highlighted task |
-| `Esc` | Return home |
+| `Esc` | Go back |
 
 ### Settings
 
 | Key | Action |
 | --- | --- |
-| `↑` / `↓` | Choose a setting |
-| `←` / `→` | Adjust durations/cadence or toggle the selected boolean setting |
-| `Space` | Toggle auto-start-next or desktop notifications when selected |
-| `Esc` | Return home |
+| `↑` / `↓` | Move through settings |
+| `←` / `→` | Change the selected value |
+| `Space` | Turn the selected option on or off |
+| `Esc` | Go back |
 
-## Defaults and local data
+## Configuration
 
-The default rhythm is 25 minutes focus, a 5-minute short break, and a 15-minute long break after four completed focus sessions. Auto-start-next is off by default. A fresh timer waits for `Space`; a running timer is saved paused when you quit cleanly. A focus session stays associated with the task selected when that interval started, even if you change tasks while it runs.
+| Setting | Default |
+| --- | --- |
+| Focus | 25 minutes |
+| Short break | 5 minutes |
+| Long break | 15 minutes |
+| Long break after | 4 focus sessions |
+| Auto-start next interval | Off |
+| Desktop notifications | On |
 
-Settings, tasks, and completed focus sessions are stored locally at:
+You can change these settings in the app by pressing `,`.
+
+### Notifications
+
+Pomodoro sends desktop notifications with OSC 9, 777 and 99 escape sequences, so they only appear in terminals that support these sequences. Two extra notes:
+
+- **tmux:** add `set -g allow-passthrough on` to your tmux config so notifications reach your terminal.
+- **Turning them off:** set `OPENTUI_NOTIFICATIONS=0` in your environment.
+
+### Data
+
+Your settings, tasks and session history are saved to one file:
 
 ```text
 ~/Library/Application Support/pomodoro_tui/state.json
 ```
 
-Existing saved data was migrated to this location during the app rename.
+A running timer is saved as paused when you quit. If the file is corrupted, Pomodoro shows an error and does not overwrite it.
 
-No account, cloud sync, audio, or iOS integrations are included. If the state file is invalid, Pomodoro reports an error and leaves it unchanged. Recovery after a crash or forced kill is not guaranteed in v1.
+## Development
 
-When a focus or break interval ends naturally, Pomodoro sends a desktop notification through OSC 9/777/99 when the terminal supports it; the in-app completion notice always remains. Use Settings → Desktop notifications to turn external notifications off or on (on by default). In tmux, enable passthrough with `set -g allow-passthrough on`. Set `OPENTUI_NOTIFICATIONS=0` to disable notifications.
-
-## Checks
+Requires [Bun](https://bun.sh) 1.3 or newer.
 
 ```sh
-bun test
-bun run typecheck
+bun install
+bun run dev          # run with hot reload
+bun test             # run the tests
+bun run typecheck    # check types
 ```
 
-## Releasing
+### Releasing
 
 ```sh
 scripts/release.sh 0.2.0
 ```
 
-Builds macOS binaries, publishes a GitHub release, and updates the formula in [m0hdrar/homebrew-tap](https://github.com/m0hdrar/homebrew-tap).
+This command does three things:
+
+- Builds the macOS binaries
+- Publishes a GitHub release
+- Updates the formula in [m0hdrar/homebrew-tap](https://github.com/m0hdrar/homebrew-tap)
 
 ## License
 
-MIT
+[MIT](LICENSE)
