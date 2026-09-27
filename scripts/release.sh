@@ -6,6 +6,7 @@ VERSION="${1:?usage: scripts/release.sh <version>}"
 REPO=m0hdrar/pomodoro_tui
 TAP=m0hdrar/homebrew-tap
 
+bun install --os=darwin --cpu="*"  # native OpenTUI libs for both archs
 bun test
 rm -rf dist && mkdir dist
 for ARCH in arm64 x64; do
