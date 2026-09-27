@@ -6,6 +6,8 @@
 
 A keyboard-first Pomodoro timer for your terminal, built with [Bun](https://bun.sh) and [OpenTUI](https://github.com/sst/opentui).
 
+![Pomodoro running a focus session](assets/screenshot.png)
+
 ## Features
 
 - **Focus timer:** focus sessions, short breaks and long breaks, controlled from the keyboard
