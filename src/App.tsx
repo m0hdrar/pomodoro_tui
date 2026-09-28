@@ -1,8 +1,10 @@
+import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { useKeyboard, useRenderer, useTerminalDimensions } from "@opentui/react";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import {
   completeInterval,
+  createTimer,
   pauseTimer,
   remainingMs,
   resetInterval,
@@ -18,6 +20,7 @@ import {
   type PersistedState,
   type Task,
 } from "./storage";
+import { clearLive, getLivePath, writeLive } from "./status";
 import { HomeView } from "./views/HomeView";
 import { SettingsView } from "./views/SettingsView";
 import { StatsView } from "./views/StatsView";
@@ -52,6 +55,7 @@ type Action =
   | { type: "complete-selected-task" }
   | { type: "toggle-timer"; nowMs: number }
   | { type: "reset-interval" }
+  | { type: "reset-cycle" }
   | { type: "skip-interval" }
   | { type: "complete-interval"; nowMs: number; sessionId: string }
   | { type: "select-setting"; index: number }
@@ -215,6 +219,16 @@ function reducer(state: AppState, action: Action): AppState {
           sessionTaskId: null,
         },
         notice: "Interval reset.",
+      };
+    case "reset-cycle":
+      return {
+        ...state,
+        data: {
+          ...state.data,
+          timer: createTimer(state.data.settings),
+          sessionTaskId: null,
+        },
+        notice: "Focus cycle reset.",
       };
     case "complete-interval": {
       const result = completeInterval(
@@ -408,6 +422,22 @@ function App({ statePath = getStatePath(), initialData, persist = true }: AppPro
     );
   }, [enqueueSave, persist, state.data, state.hydrated, state.storageHealthy]);
 
+  const livePath = useMemo(() => getLivePath(statePath), [statePath]);
+
+  useEffect(() => {
+    if (!persist) return;
+    const cleanup = () => clearLive(livePath);
+    process.once("exit", cleanup);
+    return () => {
+      process.off("exit", cleanup);
+      cleanup();
+    };
+  }, [livePath, persist]);
+
+  useEffect(() => {
+    if (persist && state.hydrated) writeLive(livePath, state.data.timer);
+  }, [livePath, persist, state.data.timer, state.hydrated]);
+
   const exit = useCallback(async () => {
     const current = stateRef.current;
     if (current.forceQuitOnNextExit) {
@@ -430,6 +460,12 @@ function App({ statePath = getStatePath(), initialData, persist = true }: AppPro
     renderer.destroy();
   }, [enqueueSave, renderer]);
 
+  // Keeps the header clock ticking even while the timer is idle.
+  useEffect(() => {
+    const clock = setInterval(() => setNowMs(Date.now()), 1_000);
+    return () => clearInterval(clock);
+  }, []);
+
   const timer = state.data.timer;
   const activeTaskId = state.data.activeTaskId;
 
@@ -449,13 +485,17 @@ function App({ statePath = getStatePath(), initialData, persist = true }: AppPro
         const notificationKey = `${timer.phase}:${timer.endsAtMs}`;
         if (notifiedInterval.current !== notificationKey) {
           notifiedInterval.current = notificationKey;
-          if (
-            stateRef.current.data.settings.notificationsEnabled &&
-            renderer.capabilities?.notifications
-          ) {
-            const message = timer.phase === "focus"
-              ? "Focus session complete"
-              : "Break is over";
+          const message = timer.phase === "focus"
+            ? "Focus session complete"
+            : "Break is over";
+          if (!stateRef.current.data.settings.notificationsEnabled) {
+            // Disabled in settings.
+          } else if (process.env.HERDR_ENV === "1") {
+            // herdr doesn't forward OSC notifications from panes, so use its own API.
+            spawn(process.env.HERDR_BIN_PATH || "herdr", ["notification", "show", "Pomodoro", "--body", message], {
+              stdio: "ignore",
+            }).on("error", () => undefined);
+          } else if (renderer.capabilities?.notifications) {
             try {
               renderer.triggerNotification(message, "Pomodoro");
             } catch {
@@ -507,7 +547,7 @@ function App({ statePath = getStatePath(), initialData, persist = true }: AppPro
       } else if (key.name === "n") {
         dispatch({ type: "skip-interval" });
       } else if (key.name === "r") {
-        dispatch({ type: "reset-interval" });
+        dispatch({ type: key.shift ? "reset-cycle" : "reset-interval" });
       } else if (key.name === "t") {
         const tasks = currentTasks(current.data);
         const activeIndex = tasks.findIndex((task) => task.id === current.data.activeTaskId);

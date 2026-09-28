@@ -32,6 +32,37 @@ pomodoro
 
 Supports macOS on Apple Silicon and Intel.
 
+### As a herdr plugin
+
+Run Pomodoro in a [herdr](https://herdr.dev) pane (needs [Bun](https://bun.sh)):
+
+```sh
+herdr plugin install m0hdrar/pomodoro_tui
+```
+
+Bind a key that jumps to the Pomodoro pane (and opens one if none is open) in `~/.config/herdr/config.toml`:
+
+```toml
+[[keys.command]]
+key = "prefix+m"
+type = "plugin_action"
+command = "m0hdrar.pomodoro.open"
+description = "pomodoro"
+```
+
+### Timer in the herdr tab bar
+
+`pomodoro status` prints the running timer as one line, such as `Focus 12:34`, and prints nothing when Pomodoro isn't open. To show it at the right of herdr's tab bar, add this to `~/.config/herdr/config.toml`:
+
+```toml
+[ui]
+tab_bar_right = [
+  { type = "command", command = "pomodoro status", interval_seconds = 1, timeout_seconds = 2 },
+]
+```
+
+Then run `herdr server reload-config`.
+
 ## Usage
 
 ### Timer
@@ -40,7 +71,8 @@ Supports macOS on Apple Silicon and Intel.
 | --- | --- |
 | `Space` | Start, pause or resume |
 | `N` | Skip to the next interval |
-| `R` | Reset the current interval |
+| `r` | Reset the current interval |
+| `R` | Reset the whole cycle (back to focus, session count to 0) |
 | `T` | Open tasks |
 | `S` | Open stats |
 | `,` | Open settings |
@@ -80,8 +112,9 @@ You can change these settings in the app by pressing `,`.
 
 ### Notifications
 
-Pomodoro sends desktop notifications with OSC 9, 777 and 99 escape sequences, so they only appear in terminals that support these sequences. Two extra notes:
+Pomodoro sends desktop notifications with OSC 9, 777 and 99 escape sequences, so they only appear in terminals that support these sequences. Some extra notes:
 
+- **herdr:** notifications go through `herdr notification show`, so they follow herdr's `[ui.toast] delivery` setting (`system` for macOS banners).
 - **tmux:** add `set -g allow-passthrough on` to your tmux config so notifications reach your terminal.
 - **Turning them off:** set `OPENTUI_NOTIFICATIONS=0` in your environment.
 

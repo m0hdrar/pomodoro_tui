@@ -11,6 +11,9 @@ import { createTimer, startTimer } from "./timer";
 
 type TestSetup = Awaited<ReturnType<typeof testRender>>;
 
+// Tests exercise the OSC path; herdr delivery is covered manually.
+delete process.env.HERDR_ENV;
+
 const setups: TestSetup[] = [];
 const temporaryDirectories: string[] = [];
 
@@ -86,6 +89,7 @@ test("home starts ready and Space starts/pauses the focus timer", async () => {
   const setup = await renderApp();
   expect(setup.captureCharFrame()).toContain("POMODORO");
   expect(setup.captureCharFrame()).toContain("No task selected");
+  expect(setup.captureCharFrame()).toMatch(/\d{2}:\d{2}:\d{2} · /);
 
   await press(setup, "space");
   await setup.waitForFrame((frame) => frame.includes("IN PROGRESS"));
@@ -104,6 +108,21 @@ test("R resets an in-progress interval to ready without logging it", async () =>
 
   expect(frame).toContain("25:00");
   expect(frame).toContain("0 of 4 focus sessions");
+});
+
+test("r keeps the cycle count but Shift+R resets the whole cycle", async () => {
+  const initialData = defaultState();
+  initialData.timer = { ...createTimer(initialData.settings), completedFocusCount: 2 };
+  const setup = await renderApp(80, 24, initialData);
+
+  await press(setup, "r");
+  await setup.waitForFrame((frame) => frame.includes("2 of 4 focus sessions"));
+
+  await press(setup, "R");
+  const frame = await setup.waitForFrame((currentFrame) =>
+    currentFrame.includes("0 of 4 focus sessions"),
+  );
+  expect(frame).toContain("25:00");
 });
 
 test("keyboard navigation reaches tasks, stats, and settings", async () => {
@@ -247,7 +266,7 @@ test("home content remains visible in a narrow terminal", async () => {
 
   expect(frame).toContain("25:00");
   expect(frame).toContain("[Space]");
-  expect(frame).toContain("[R] Reset");
+  expect(frame).toContain("[r/R] Reset");
   expect(frame).toContain("[T]");
 });
 

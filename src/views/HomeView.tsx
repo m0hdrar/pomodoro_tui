@@ -64,6 +64,7 @@ export function HomeView({
         ? "PAUSED"
         : "READY";
   const action = timer.status === "running" ? "Pause" : "Start";
+  const clock = new Date(nowMs).toLocaleTimeString("en-GB", { hour12: false });
   const today = new Date(nowMs).toLocaleDateString(undefined, {
     weekday: compact ? undefined : "short",
     month: "short",
@@ -86,7 +87,9 @@ export function HomeView({
         <text fg={ACCENT}>
           <strong>POMODORO</strong>
         </text>
-        <text fg={MUTED}>{today}</text>
+        <text fg={MUTED}>
+          <strong fg="#FFFFFF">{clock}</strong> · {today}
+        </text>
       </box>
 
       {error && (
@@ -135,13 +138,13 @@ export function HomeView({
         )}
         {compact ? (
           <>
-            <text>[Space] {action} · [N] Skip · [R] Reset</text>
+            <text>[Space] {action} · [N] Skip · [r/R] Reset</text>
             <text>[T] Tasks · [S] Stats</text>
             <text>[,] Settings · [Q] Quit</text>
           </>
         ) : (
           <>
-            <text>[Space] {action} · [N] Skip · [R] Reset</text>
+            <text>[Space] {action} · [N] Skip · [r/R] Reset</text>
             <text>[T] Tasks · [S] Stats · [,] Settings · [Q] Quit</text>
           </>
         )}

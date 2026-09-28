@@ -1,0 +1,22 @@
+id = "m0hdrar.pomodoro"
+name = "Pomodoro"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+description = "Keyboard-first Pomodoro timer with tasks and stats, in a Herdr pane."
+platforms = ["macos"]
+
+[[build]]
+command = ["bun", "install", "--production"]
+
+# ponytail: split, not popup — closing a popup exits the app, which pauses the timer.
+[[panes]]
+id = "timer"
+title = "Pomodoro"
+placement = "split"
+command = ["bun", "run", "src/index.tsx"]
+
+[[actions]]
+id = "open"
+title = "Pomodoro: go to timer"
+contexts = ["pane", "workspace"]
+command = ["bun", "run", "scripts/herdr-focus.ts"]
